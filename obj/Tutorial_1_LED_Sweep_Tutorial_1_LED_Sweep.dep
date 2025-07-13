@@ -436,7 +436,7 @@ I (Library\StdDriver\inc\usbd.h)(0x670C8CF4)
 I (Library\StdDriver\inc\hsusbd.h)(0x670C8CF4)
 I (Library\StdDriver\inc\otg.h)(0x670C8CF4)
 I (Library\StdDriver\inc\hsotg.h)(0x670C8CF4)
-F (.\main.c)(0x687285D0)(-xc -std=c90 --target=arm-arm-none-eabi -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-gdwarf-4 -O2 -fno-function-sections -I ./Library/Device/Nuvoton/M480/Include -I ./Library/StdDriver/inc -I ./Library/CMSIS/Include-IC:/Users/Admin/AppData/Local/Keil_v5/ARM/RV31/INC-IC:/Users/Admin/AppData/Local/Keil_v5/ARM/CMSIS/Include-D__UVISION_VERSION="541"-o ./obj/main.o -MMD)
+F (.\main.c)(0x68736EE6)(-xc -std=c90 --target=arm-arm-none-eabi -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-gdwarf-4 -O2 -fno-function-sections -I ./Library/Device/Nuvoton/M480/Include -I ./Library/StdDriver/inc -I ./Library/CMSIS/Include-IC:/Users/Admin/AppData/Local/Keil_v5/ARM/RV31/INC-IC:/Users/Admin/AppData/Local/Keil_v5/ARM/CMSIS/Include-D__UVISION_VERSION="541"-o ./obj/main.o -MMD)
 I (Library\Device\Nuvoton\M480\Include\NuMicro.h)(0x670C8CF4)
 I (Library\Device\Nuvoton\M480\Include\M480.h)(0x670C8CF4)
 I (Library\CMSIS\Include\core_cm4.h)(0x670C8CF0)

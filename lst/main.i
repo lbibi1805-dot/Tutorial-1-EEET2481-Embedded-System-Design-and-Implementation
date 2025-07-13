@@ -5828,77 +5828,46 @@ void HSUSBD_SetVendorRequest(HSUSBD_VENDOR_REQ pfnVendorReq);
 
 
 
-void SYS_Init(void)
-{
-  SYS_UnlockReg(); // Unlock protected registers
 
-  //Set XT1_OUT (((GPIO_T *) (((uint32_t)0x40000000) + 0x04140UL)).2) and XT1_IN (((GPIO_T *) (((uint32_t)0x40000000) + 0x04140UL)).3) to input mode
-  // 0x00: input; 0x01: Output (push-pull)
-    ((GPIO_T *) (((uint32_t)0x40000000) + 0x04140UL))->MODE &= ~((0x00 << 4) | (0x00 << 6));
 
-    //Enable External High-Speed Crystal (HXT)
-    ((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->PWRCTL |= 1<<0 // HXT Enable Bit, write 1 to enable; // Enable HXT
-    while (!(((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->STATUS & 1<<0 // HXT Clock Sourse Stable Flag)); // Wait for HXT to stabilize
+void SYS_Init(void) {
+    SYS_UnlockReg();
 
-    //Configure PLL for 192 MHz
-    ((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->PLLCTL = 0; // Reset PLLCTL
-  ((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->PLLCTL &= (~(1 << 19)); // PLL Source is HXT
-  ((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->PLLCTL &= (~(1 << 16)); // PLL is in normal mode
+    // Set XT1_OUT (((GPIO_T *) (((uint32_t)0x40000000) + 0x04140UL)).2) and XT1_IN (((GPIO_T *) (((uint32_t)0x40000000) + 0x04140UL)).3) to input mode
+    ((GPIO_T *) (((uint32_t)0x40000000) + 0x04140UL))->MODE &= ~((0x3 << 4) | (0x3 << 6));
 
-  // Configure PLL output frequency
-  // FIN = 12 MHZ; FOUT = 192 MHZ
-  // Choose:
-  // NR = 2 -> INDIV = 1
-  // NF = 32 -> FBDIV = 30
-  // NO = 2 -> OUTDIV = "01"
-  ((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->PLLCTL |= (9 << 1); // INDIV
-  ((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->PLLCTL |= (0 << 30); // FBDIV
-  ((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->PLLCTL &= (14 << 0x01); // OUTDIV
+    // Enable HXT
+    ((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->PWRCTL |= (1<<0) // HXT Enable Bit;
+    while (!(((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->STATUS & (1<<0) // HXT Clock Source Stable Flag));
 
-    while (!(((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->STATUS & 1<<2 // Internal PLL Clock Source Stable Flag)); // Wait for PLL to stabilize
+    // Configure PLL for 192 MHz (FIN=12 MHz, NR=2, NF=64, NO=2)
+    ((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->PLLCTL = (1 << 8) | (64 << 9) | (1 << 16); // INDIV=1, FBDIV=64, OUTDIV=01
+    while (!(((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->STATUS & (1<<2) // Internal PLL Clock Source Stable Flag));
 
     // Set HCLK to PLLFOUT
-  ((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->CLKSEL0 &= (~(0x07 << 0)); // Clear current settings for
-    ((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->CLKSEL0 |= 0x02; // Set a new value
+    ((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->CLKSEL0 &= ~(0x7 << 0);
+    ((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->CLKSEL0 |= 0x2;
 
-  // Set HCLK Divider to 0
-  ((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->CLKDIV0 &= (~0x0F); // Clear current settings for HCLKDIV
-  ((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->CLKDIV0 |= 0x00; // Set new value
+    // Set HCLK Divider to 0
+    ((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->CLKDIV0 &= ~0xF;
+    ((CLK_T *) (((uint32_t)0x40000000) + 0x00200UL))->CLKDIV0 |= 0x0;
 
+    // Set ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).0 ~ ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).2 as ((GPIO_DBCTL_T *) (((uint32_t)0x40000000) + 0x04440UL))
+    ((SYS_T *) (((uint32_t)0x40000000) + 0x00000UL))->GPH_MFPL &= ~((0xF << 0) | (0xF << 4) | (0xF << 8));
+    ((SYS_T *) (((uint32_t)0x40000000) + 0x00000UL))->GPH_MFPL |= ((0x0 << 0) | (0x0 << 4) | (0x0 << 8));
 
-    // Set ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).0 ~ ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).2 multi-function to ((GPIO_DBCTL_T *) (((uint32_t)0x40000000) + 0x04440UL))
-    ((SYS_T *) (((uint32_t)0x40000000) + 0x00000UL))->GPH_MFPL &= ~((0xF << 0) | (0xF << 4) | (0xF << 8)); // Clear multi-function settings for ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).0, ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).1, ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).2
-    ((SYS_T *) (((uint32_t)0x40000000) + 0x00000UL))->GPH_MFPL |= ((0x0 << 0) | (0x0 << 4) | (0x0 << 8)); // Set ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).0, ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).1, ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).2 as ((GPIO_DBCTL_T *) (((uint32_t)0x40000000) + 0x04440UL))
-
-  SYS_LockReg(); // Lock protected registers
-
+    SYS_LockReg();
 }
 
-int main()
-{
-
-    // Initialize system and peripherals
+int main() {
     SYS_Init();
 
+    // Set ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).0, ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).1, ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).2 as output push-pull
+    ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL))->MODE &= ~((0x3 << 0) | (0x3 << 2) | (0x3 << 4));
+    ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL))->MODE |= ((0x1 << 0) | (0x1 << 2) | (0x1 << 4));
+# 66 "main.c"
+    // Turn on all LEDs (assuming active-low)
+    ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL))->DOUT &= ~((1<<0) // ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).0 | (1<<1) // ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).1 | (1<<2) // ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).2); // Set ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).0, ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).1, ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).2 to 0
 
-  // Set ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).0, ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).1, ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).2 as output mode
-  ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL))->MODE &= ~((0x03 << 0) | (0x03 << 2) | (0x03 << 4)); // Clear the current modes
-  ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL))->MODE |= ((0x01 << 0) | (0x01 << 2) | (0x01 << 4)); // Set output mode (0x01). For input mode, set (0x00)
-
-// while(1) {
-   // ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL))->DOUT ^= (1<<0);
-   // CLK_SysTickDelay(10000000);
-   // ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL))->DOUT ^= (1<<1);
-   // CLK_SysTickDelay(10000000);
-   // ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL))->DOUT ^= (1<<2);
-   // CLK_SysTickDelay(10000000);
-  //}
-
-  // ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL))->DOUT &= ~((1<<0) | (1<<1) | (1<<2)); // Set to 0
-  while(1) {
-     ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL))->DOUT = 0x0000; // All LEDs ON (((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).0, ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).1, ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL)).2 = 0)
-     CLK_SysTickDelay(500000); // Delay ~500ms
-     ((GPIO_T *) (((uint32_t)0x40000000) + 0x041C0UL))->DOUT = (1<<0) | (1<<1) | (1<<2); // All LEDs OFF
-     CLK_SysTickDelay(500000);
-   }
+    while(1); // Keep program running
 }
